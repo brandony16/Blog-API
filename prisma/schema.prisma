@@ -15,13 +15,14 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  role      Role     @default(CLIENT)
+  id        Int       @id @default(autoincrement())
+  role      Role      @default(CLIENT)
   firstName String
   lastName  String
-  email     String   @unique
+  email     String    @unique
   password  String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
 
   articles Article[]
   comments Comment[]
@@ -34,18 +35,23 @@ model Article {
   isPublished Boolean   @default(false)
   createdAt   DateTime  @default(now())
   publishedAt DateTime?
-  author      User      @relation(fields: [authorId], references: [id])
-  authorId    Int
-  comments    Comment[]
+  editedAt    DateTime?
+  deletedAt   DateTime?
+
+  author   User      @relation(fields: [authorId], references: [id])
+  authorId Int
+  comments Comment[]
 }
 
 model Comment {
-  id          Int      @id @default(autoincrement())
-  text        String
-  createdAt   DateTime @default(now())
-  commenter   User     @relation(fields: [commenterId], references: [id])
+  id        Int       @id @default(autoincrement())
+  text      String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  commenter   User    @relation(fields: [commenterId], references: [id])
   commenterId Int
-  article     Article  @relation(fields: [articleId], references: [id])
+  article     Article @relation(fields: [articleId], references: [id])
   articleId   Int
 }
 
