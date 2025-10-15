@@ -1,9 +1,9 @@
 import express from "express";
 import * as dotenv from "dotenv";
-import authRouter from "./routes/authRouter";
-import usersRouter from "./routes/usersRouter";
-import articlesRouter from "./routes/articlesRouter";
-import commentsRouter from "./routes/commentsRouter";
+import authRouter from "./routes/authRouter.js";
+import usersRouter from "./routes/usersRouter.js";
+import articlesRouter from "./routes/articlesRouter.js";
+import commentsRouter from "./routes/commentsRouter.js";
 
 dotenv.config();
 

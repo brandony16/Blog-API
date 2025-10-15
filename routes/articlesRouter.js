@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as articlesController from "../controllers/articlesController";
+import * as articlesController from "../controllers/articlesController.js";
 
 // Routes to everything needed for articles, including specific articles and comments.
 const articlesRouter = Router();

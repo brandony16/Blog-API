@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as usersController from "../controllers/usersController";
+import * as usersController from "../controllers/usersController.js";
 
 // Gets user information for profiles
 const usersRouter = Router();

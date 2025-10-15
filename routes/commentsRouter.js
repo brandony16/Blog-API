@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as commentsController from "../controllers/commentsController";
+import * as commentsController from "../controllers/commentsController.js";
 
 // Primarily used for editing and deleting already existing comments
 const commentsRouter = Router();
