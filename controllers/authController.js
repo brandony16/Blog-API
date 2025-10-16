@@ -80,7 +80,7 @@ export function login(req, res, next) {
     res.json({
       message: "Login Successful",
       token: token,
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, role: user.role },
     });
   })(req, res, next);
 }

@@ -1,3 +1,4 @@
+import { Role } from "@prisma/client";
 import prisma from "../prisma/prismaClient.js";
 
 export async function getComments(req, res) {
@@ -40,12 +41,18 @@ export async function editComment(req, res) {
     });
 
     if (!existingComment) {
-      return res.status(400).json({ error: "Comment not found" });
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    if (existingComment.commenterId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to edit this comment" });
     }
 
     const updatedComment = await prisma.comment.update({
       where: { id: parseInt(commentId) },
-      data: { text: content },
+      data: { text: content, editedAt: new Date() },
     });
 
     return res.json(updatedComment);
@@ -58,6 +65,23 @@ export async function editComment(req, res) {
 export async function deleteComment(req, res) {
   try {
     const { commentId } = req.params;
+
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: parseInt(commentId) },
+    });
+
+    if (!existingComment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+    if (
+      existingComment.commenterId !== req.user.id &&
+      req.user.role !== Role.ADMIN
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to delete this comment" });
+    }
 
     const deletedComment = await prisma.comment.update({
       where: { id: commentId },
