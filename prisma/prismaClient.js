@@ -1,9 +1,6 @@
-import { PrismaClient } from "@prisma/client";
-import dotenv from "dotenv";
+import pkg from "@prisma/client";
+const { PrismaClient } = pkg;
 
-dotenv.config({
-  path: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
-});
 const prisma = new PrismaClient();
 
 export default prisma;

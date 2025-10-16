@@ -84,5 +84,3 @@ export function login(req, res, next) {
     });
   })(req, res, next);
 }
-
-export function logout(req, res) {}

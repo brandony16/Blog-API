@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
 import * as userQueries from "../queries/userQueries.js";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 passport.use(
   new LocalStrategy(

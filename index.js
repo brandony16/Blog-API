@@ -1,5 +1,5 @@
-import express from "express";
 import * as dotenv from "dotenv";
+import express from "express";
 import authRouter from "./routes/authRouter.js";
 import usersRouter from "./routes/usersRouter.js";
 import articlesRouter from "./routes/articlesRouter.js";
@@ -7,7 +7,6 @@ import commentsRouter from "./routes/commentsRouter.js";
 import passport from "./auth/passport.js";
 
 dotenv.config();
-
 const app = express();
 
 app.use(express.json());
