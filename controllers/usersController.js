@@ -1,10 +1,11 @@
-import prisma from "../prisma/prismaClient.js";
 import {
   DEFAULT_LIMIT_ARTICLES,
   DEFAULT_LIMIT_COMMENTS,
   DEFAULT_LIMIT_USERS,
-  DEFAULT_TAKE,
-} from "./constants.js";
+} from "../constants.js";
+import * as articleQueries from "../queries/articleQueries.js";
+import * as commentQueries from "../queries/commentQueries.js";
+import * as userQueries from "../queries/userQueries.js";
 
 export async function getUsers(req, res) {
   try {
@@ -14,22 +15,8 @@ export async function getUsers(req, res) {
 
     // Get users and total number of users
     const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        skip: skip,
-        take: limit,
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-        },
-        where: { deletedAt: null },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.user.count({
-        where: { deletedAt: null },
-      }),
+      userQueries.getManyUsers(skip, limit),
+      userQueries.getUserCount(),
     ]);
 
     return res.json({
@@ -50,34 +37,7 @@ export async function getUser(req, res) {
     const { userId } = req.params;
 
     // Get the user and some of their articles and comments
-    const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
-      select: {
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        articles: {
-          take: DEFAULT_TAKE,
-          where: { isPublished: true, deletedAt: null },
-          select: {
-            id: true,
-            title: true,
-            publishedAt: true,
-          },
-        },
-        comments: {
-          take: DEFAULT_TAKE,
-          where: { deletedAt: null },
-          select: {
-            id: true,
-            text: true,
-            createdAt: true,
-            article: { select: { title: true } },
-          },
-        },
-      },
-    });
+    const user = await userQueries.getUserAndProfile(userId);
 
     if (!user) {
       return res.status(404).json({ error: "No user found" });
@@ -97,9 +57,7 @@ export async function editUser(req, res) {
   const data = req.body;
 
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
-    });
+    const existingUser = await userQueries.findUserById(userId);
 
     // Verify this user exists and that the user has permission to edit this user
     if (!existingUser) {
@@ -121,17 +79,7 @@ export async function editUser(req, res) {
     }
 
     // Update user
-    const updatedUser = await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: updateData,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-      },
-    });
+    const updatedUser = await userQueries.updateUser(userId, updateData);
 
     return res.json({ user: updatedUser });
   } catch (err) {
@@ -144,9 +92,7 @@ export async function deleteUser(req, res) {
   try {
     const { userId } = req.params;
 
-    const existingUser = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
-    });
+    const existingUser = userQueries.findUserById(userId);
 
     // Verify the given user exists and that the user has permission to delete the user
     if (!existingUser) {
@@ -158,17 +104,7 @@ export async function deleteUser(req, res) {
         .json({ error: "Not authorized to delete this user" });
     }
 
-    const deletedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { deletedAt: new Date() },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-      },
-    });
+    const deletedUser = await userQueries.removeUser(userId);
 
     return res.json(deletedUser);
   } catch (err) {
@@ -186,30 +122,8 @@ export async function getUserArticles(req, res) {
 
     // Get all articles and the total number of articles for this user
     const [articles, total] = await Promise.all([
-      prisma.article.findMany({
-        where: {
-          authorId: parseInt(userId),
-          deletedAt: null,
-          isPublished: true,
-        },
-        skip: skip,
-        take: limit,
-        orderBy: { publishedAt: "desc" },
-        select: {
-          id: true,
-          title: true,
-          body: true,
-          publishedAt: true,
-          editedAt: true,
-        },
-      }),
-      prisma.article.count({
-        where: {
-          authorId: parseInt(userId),
-          deletedAt: null,
-          isPublished: true,
-        },
-      }),
+      articleQueries.getArticlesByUser(userId, skip, limit),
+      articleQueries.getArticleCountByUser(userId),
     ]);
 
     res.json({
@@ -234,27 +148,8 @@ export async function getUserComments(req, res) {
 
     // Get all comments and the total number of comments from this user
     const [comments, total] = await Promise.all([
-      prisma.comment.findMany({
-        where: {
-          commenterId: parseInt(userId),
-          deletedAt: null,
-        },
-        skip: skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          text: true,
-          createdAt: true,
-          editedAt: true,
-        },
-      }),
-      prisma.comment.count({
-        where: {
-          commenterId: parseInt(userId),
-          deletedAt: null,
-        },
-      }),
+      commentQueries.getCommentsByUser(userId, skip, limit),
+      commentQueries.getCommentCountByUser(userId),
     ]);
 
     res.json({

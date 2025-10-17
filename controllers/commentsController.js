@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import prisma from "../prisma/prismaClient.js";
-import { DEFAULT_LIMIT_COMMENTS } from "./constants.js";
+import { DEFAULT_LIMIT_COMMENTS } from "../constants.js";
+import * as commentQueries from "../queries/commentQueries.js";
 
 export async function getComments(req, res) {
   try {
@@ -10,21 +11,8 @@ export async function getComments(req, res) {
 
     // Get all comments and the total number of comments
     const [comments, total] = await Promise.all([
-      prisma.comment.findMany({
-        skip: skip,
-        take: limit,
-        where: { deletedAt: null },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          text: true,
-          createdAt: true,
-          editedAt: true,
-        },
-      }),
-      prisma.comment.count({
-        where: { deletedAt: null },
-      }),
+      commentQueries.getManyComments(skip, limit),
+      commentQueries.getTotalCommentCount(),
     ]);
 
     return res.json({
@@ -45,9 +33,7 @@ export async function editComment(req, res) {
   const { content } = req.body;
 
   try {
-    const existingComment = await prisma.comment.findUnique({
-      where: { id: parseInt(commentId) },
-    });
+    const existingComment = await commentQueries.getCommentById(commentId);
 
     // Validate comment exists and that the user has permission to edit it
     if (!existingComment) {
@@ -60,10 +46,10 @@ export async function editComment(req, res) {
     }
 
     // Update comment
-    const updatedComment = await prisma.comment.update({
-      where: { id: parseInt(commentId) },
-      data: { text: content, editedAt: new Date() },
-    });
+    const updatedComment = await commentQueries.updateComment(
+      commentId,
+      content
+    );
 
     return res.json(updatedComment);
   } catch (err) {
@@ -76,9 +62,7 @@ export async function deleteComment(req, res) {
   try {
     const { commentId } = req.params;
 
-    const existingComment = await prisma.comment.findUnique({
-      where: { id: parseInt(commentId) },
-    });
+    const existingComment = await commentQueries.getCommentById(commentId);
 
     // Verify comment exists and confirm that user has permission to delete the comment
     if (!existingComment) {
@@ -93,10 +77,7 @@ export async function deleteComment(req, res) {
         .json({ error: "Not authorized to delete this comment" });
     }
 
-    const deletedComment = await prisma.comment.update({
-      where: { id: commentId },
-      data: { deletedAt: new Date() },
-    });
+    const deletedComment = await commentQueries.removeComment(commentId);
 
     return res.json(deletedComment);
   } catch (err) {

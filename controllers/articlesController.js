@@ -1,4 +1,6 @@
-export function getArticles(req, res) {}
+export function getArticles(req, res) {
+  
+}
 
 export function postArticle(req, res) {}
 
