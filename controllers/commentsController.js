@@ -12,6 +12,12 @@ export async function getComments(req, res) {
       take: limit,
       where: { deletedAt: null },
       orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        text: true,
+        createdAt: true,
+        editedAt: true,
+      },
     });
 
     const total = await prisma.comment.count({
@@ -26,7 +32,7 @@ export async function getComments(req, res) {
       comments,
     });
   } catch (err) {
-    console.error(`Error updating comment: ${err}`);
+    console.error(`Error fetching comments: ${err}`);
     res.status(500).json({ error: "Internal Service Error" });
   }
 }
