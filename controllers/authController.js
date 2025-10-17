@@ -55,8 +55,19 @@ export const register = [
 
       await userQueries.addUser(firstName, lastName, email, hashedPassword);
 
+      const payload = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: "1d",
+      });
+
       res.status(201).json({
         message: "User registered successfully",
+        token: token,
+        user: { id: user.id, email: user.email, role: user.role },
       });
     } catch (err) {
       next(err);
@@ -72,12 +83,13 @@ export function login(req, res, next) {
     const payload = {
       id: user.id,
       email: user.email,
+      role: user.role,
     };
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
-    res.json({
+    res.status(201).json({
       message: "Login Successful",
       token: token,
       user: { id: user.id, email: user.email, role: user.role },

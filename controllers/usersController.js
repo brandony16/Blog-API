@@ -1,28 +1,36 @@
 import prisma from "../prisma/prismaClient.js";
+import {
+  DEFAULT_LIMIT_ARTICLES,
+  DEFAULT_LIMIT_COMMENTS,
+  DEFAULT_LIMIT_USERS,
+  DEFAULT_TAKE,
+} from "./constants.js";
 
 export async function getUsers(req, res) {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_USERS;
     const skip = (page - 1) * limit; // Number of entries to skip to get correct page
 
-    const users = await prisma.user.findMany({
-      skip: skip,
-      take: limit,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-      },
-      where: { deletedAt: null },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const total = await prisma.user.count({
-      where: { deletedAt: null },
-    });
+    // Get users and total number of users
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        skip: skip,
+        take: limit,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+        },
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.user.count({
+        where: { deletedAt: null },
+      }),
+    ]);
 
     return res.json({
       page,
@@ -41,6 +49,7 @@ export async function getUser(req, res) {
   try {
     const { userId } = req.params;
 
+    // Get the user and some of their articles and comments
     const user = await prisma.user.findUnique({
       where: { id: parseInt(userId) },
       select: {
@@ -49,7 +58,7 @@ export async function getUser(req, res) {
         email: true,
         role: true,
         articles: {
-          take: 3,
+          take: DEFAULT_TAKE,
           where: { isPublished: true, deletedAt: null },
           select: {
             id: true,
@@ -58,7 +67,7 @@ export async function getUser(req, res) {
           },
         },
         comments: {
-          take: 3,
+          take: DEFAULT_TAKE,
           where: { deletedAt: null },
           select: {
             id: true,
@@ -92,10 +101,10 @@ export async function editUser(req, res) {
       where: { id: parseInt(userId) },
     });
 
+    // Verify this user exists and that the user has permission to edit this user
     if (!existingUser) {
       return res.status(404).json({ error: "User not found" });
     }
-
     if (existingUser.id !== req.user.id) {
       return res
         .status(403)
@@ -111,6 +120,7 @@ export async function editUser(req, res) {
       return res.status(400).json({ error: "No editable fields provided" });
     }
 
+    // Update user
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(userId) },
       data: updateData,
@@ -138,10 +148,10 @@ export async function deleteUser(req, res) {
       where: { id: parseInt(userId) },
     });
 
+    // Verify the given user exists and that the user has permission to delete the user
     if (!existingUser) {
       return res.status(404).json({ error: "User not found" });
     }
-
     if (existingUser.id !== req.user.id && req.user.role !== Role.ADMIN) {
       return res
         .status(403)
@@ -151,6 +161,13 @@ export async function deleteUser(req, res) {
     const deletedUser = await prisma.user.update({
       where: { id: userId },
       data: { deletedAt: new Date() },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+      },
     });
 
     return res.json(deletedUser);
@@ -164,9 +181,10 @@ export async function getUserArticles(req, res) {
   try {
     const { userId } = req.params;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_ARTICLES;
     const skip = (page - 1) * limit;
 
+    // Get all articles and the total number of articles for this user
     const [articles, total] = await Promise.all([
       prisma.article.findMany({
         where: {
@@ -211,9 +229,10 @@ export async function getUserComments(req, res) {
   try {
     const { userId } = req.params;
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_COMMENTS;
     const skip = (page - 1) * limit;
 
+    // Get all comments and the total number of comments from this user
     const [comments, total] = await Promise.all([
       prisma.comment.findMany({
         where: {

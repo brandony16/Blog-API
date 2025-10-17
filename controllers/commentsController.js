@@ -1,28 +1,31 @@
 import { Role } from "@prisma/client";
 import prisma from "../prisma/prismaClient.js";
+import { DEFAULT_LIMIT_COMMENTS } from "./constants.js";
 
 export async function getComments(req, res) {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_COMMENTS;
     const skip = (page - 1) * limit; // Number of entries to skip to get correct page
 
-    const comments = await prisma.comment.findMany({
-      skip: skip,
-      take: limit,
-      where: { deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        text: true,
-        createdAt: true,
-        editedAt: true,
-      },
-    });
-
-    const total = await prisma.comment.count({
-      where: { deletedAt: null },
-    });
+    // Get all comments and the total number of comments
+    const [comments, total] = await Promise.all([
+      prisma.comment.findMany({
+        skip: skip,
+        take: limit,
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          text: true,
+          createdAt: true,
+          editedAt: true,
+        },
+      }),
+      prisma.comment.count({
+        where: { deletedAt: null },
+      }),
+    ]);
 
     return res.json({
       page,
@@ -46,16 +49,17 @@ export async function editComment(req, res) {
       where: { id: parseInt(commentId) },
     });
 
+    // Validate comment exists and that the user has permission to edit it
     if (!existingComment) {
       return res.status(404).json({ error: "Comment not found" });
     }
-
     if (existingComment.commenterId !== req.user.id) {
       return res
         .status(403)
         .json({ error: "Not authorized to edit this comment" });
     }
 
+    // Update comment
     const updatedComment = await prisma.comment.update({
       where: { id: parseInt(commentId) },
       data: { text: content, editedAt: new Date() },
@@ -76,10 +80,10 @@ export async function deleteComment(req, res) {
       where: { id: parseInt(commentId) },
     });
 
+    // Verify comment exists and confirm that user has permission to delete the comment
     if (!existingComment) {
       return res.status(404).json({ error: "Comment not found" });
     }
-
     if (
       existingComment.commenterId !== req.user.id &&
       req.user.role !== Role.ADMIN
