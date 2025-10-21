@@ -1,5 +1,4 @@
 import { Role } from "@prisma/client";
-import prisma from "../prisma/prismaClient.js";
 import { DEFAULT_LIMIT_COMMENTS } from "../constants.js";
 import * as commentQueries from "../queries/commentQueries.js";
 

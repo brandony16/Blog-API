@@ -1,12 +1,13 @@
 import { Router } from "express";
 import * as articlesController from "../controllers/articlesController.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 // Routes to everything needed for articles, including specific articles and comments.
 const articlesRouter = Router();
 
 articlesRouter.get("/", articlesController.getArticles);
 
-articlesRouter.post("/", articlesController.postArticle);
+articlesRouter.post("/", verifyToken, articlesController.postArticle);
 
 articlesRouter.get("/:articleId", articlesController.getArticle);
 

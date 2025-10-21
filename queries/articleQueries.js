@@ -8,6 +8,17 @@ const ARTICLE_FIELDS = {
   editedAt: true,
 };
 
+// ----- COUNTS -----
+export async function getArticleCount() {
+  return await prisma.article.count({
+    where: {
+      deletedAt: null,
+      isPublished: true,
+    },
+    select: ARTICLE_FIELDS,
+  });
+}
+
 export async function getArticleCountByUser(userId) {
   return await prisma.article.count({
     where: {
@@ -15,6 +26,35 @@ export async function getArticleCountByUser(userId) {
       deletedAt: null,
       isPublished: true,
     },
+    select: ARTICLE_FIELDS,
+  });
+}
+
+// ----- SINGLE ARTICLE -----
+export async function createArticle(title, body, authorId, publishArticle) {
+  return await prisma.article.create({
+    data: {
+      title,
+      body,
+      authorId,
+      isPublished: publishArticle,
+      publishedAt: publishArticle ? new Date() : null,
+    },
+    select: ARTICLE_FIELDS,
+  });
+}
+
+// ----- MULTIPLE ARTICLES -----
+export async function getManyArticles(skip, limit) {
+  return await prisma.article.findMany({
+    where: {
+      deletedAt: null,
+      isPublished: true,
+    },
+    skip: skip,
+    take: limit,
+    orderBy: { publishedAt: "desc" },
+    select: ARTICLE_FIELDS,
   });
 }
 
