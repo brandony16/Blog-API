@@ -31,6 +31,17 @@ export async function getArticleCountByUser(userId) {
 }
 
 // ----- SINGLE ARTICLE -----
+export async function fetchArticle(articleId) {
+  return await prisma.article.findUnique({
+    where: {
+      deletedAt: null,
+      isPublished: true,
+      id: articleId,
+    },
+    select: ARTICLE_FIELDS,
+  });
+}
+
 export async function createArticle(title, body, authorId, publishArticle) {
   return await prisma.article.create({
     data: {
@@ -40,6 +51,28 @@ export async function createArticle(title, body, authorId, publishArticle) {
       isPublished: publishArticle,
       publishedAt: publishArticle ? new Date() : null,
     },
+    select: ARTICLE_FIELDS,
+  });
+}
+
+export async function updateArticle(articleId, title, body) {
+  return await prisma.article.update({
+    where: {
+      id: articleId,
+      deletedAt: null,
+    },
+    data: { title, body, editedAt: new Date() },
+    select: ARTICLE_FIELDS,
+  });
+}
+
+export async function removeArticle(articleId) {
+  return await prisma.article.update({
+    where: {
+      id: articleId,
+      deletedAt: null,
+    },
+    data: { deletedAt: new Date() },
     select: ARTICLE_FIELDS,
   });
 }

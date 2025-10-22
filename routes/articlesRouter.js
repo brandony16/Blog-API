@@ -1,24 +1,45 @@
 import { Router } from "express";
 import * as articlesController from "../controllers/articlesController.js";
-import { verifyToken } from "../middleware/authMiddleware.js";
+import { requireRole, verifyToken } from "../middleware/authMiddleware.js";
+import { Role } from "@prisma/client";
 
 // Routes to everything needed for articles, including specific articles and comments.
 const articlesRouter = Router();
 
 articlesRouter.get("/", articlesController.getArticles);
 
-articlesRouter.post("/", verifyToken, articlesController.postArticle);
+articlesRouter.post(
+  "/",
+  verifyToken,
+  verifyToken(Role.ADMIN),
+  articlesController.postArticle
+);
 
 articlesRouter.get("/:articleId", articlesController.getArticle);
 
-articlesRouter.put("/:articleId", articlesController.editArticle);
+articlesRouter.put(
+  "/:articleId",
+  verifyToken,
+  requireRole(Role.ADMIN),
+  articlesController.editArticle
+);
 
-articlesRouter.delete("/:articleId", articlesController.deleteArticle);
+articlesRouter.delete(
+  "/:articleId",
+  verifyToken,
+  articlesController.deleteArticle
+);
 
-articlesRouter.post("/:articleId/publish", articlesController.publishArticle);
+articlesRouter.post(
+  "/:articleId/publish",
+  verifyToken,
+  requireRole(Role.ADMIN),
+  articlesController.publishArticle
+);
 
 articlesRouter.get(
   "/:articleId/comments",
+  verifyToken,
   articlesController.getArticleComments
 );
 

@@ -8,7 +8,7 @@ export async function getArticles(req, res) {
     const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_ARTICLES;
     const skip = (page - 1) * limit; // Number of entries to skip to get correct page
 
-    // Get users and total number of users
+    // Get articles and total number of articles
     const [articles, total] = await Promise.all([
       articleQueries.getManyArticles(skip, limit),
       articleQueries.getArticleCount(),
@@ -19,10 +19,10 @@ export async function getArticles(req, res) {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      users,
+      articles,
     });
   } catch (err) {
-    console.error(`Error fetching users: ${err}`);
+    console.error(`Error fetching articles: ${err}`);
     res.status(500).json({ error: "Internal Service Error" });
   }
 }
@@ -45,7 +45,7 @@ const validateArticle = [
 ];
 export const postArticle = [
   validateArticle,
-  async (req, res, next) => {
+  async (req, res) => {
     const errs = validationResult(req);
     if (!errs.isEmpty()) {
       return res.status(400).json({ errors: errs.array() });
@@ -53,7 +53,7 @@ export const postArticle = [
 
     try {
       const { title, body, publishArticle } = matchedData(req);
-      await articleQueries.createArticle(
+      const article = await articleQueries.createArticle(
         title,
         body,
         req.user.id,
@@ -62,18 +62,120 @@ export const postArticle = [
 
       res.status(201).json({
         message: "Article created successfully",
+        article,
       });
     } catch (err) {
-      next(err);
+      console.error(`Error fetching articles: ${err}`);
+      res.status(500).json({ error: "Internal Service Error" });
     }
   },
 ];
 
-export async function getArticle(req, res) {}
+export async function getArticle(req, res) {
+  const { articleId } = req.params;
 
-export async function editArticle(req, res) {}
+  try {
+    const article = await articleQueries.fetchArticle(parseInt(articleId));
 
-export async function deleteArticle(req, res) {}
+    if (!article) {
+      return res.status(404).json({ error: "Article not found" });
+    }
+
+    return res.json({
+      article,
+    });
+  } catch (err) {
+    console.error(`Error fetching articles: ${err}`);
+    res.status(500).json({ error: "Internal Service Error" });
+  }
+}
+
+const validateEdit = [
+  body("title")
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage("Title must be between 1 and 50 characters.")
+    .matches(/^[^<>]*$/)
+    .withMessage("Title cannot contain HTML tags."),
+  body("body")
+    .trim()
+    .isLength({ min: 10 })
+    .withMessage("Body must be at least 10 characters long"),
+];
+export const editArticle = [
+  validateEdit,
+  async (req, res) => {
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) {
+      return res.status(400).json({ errors: errs.array() });
+    }
+
+    try {
+      const { title, body } = matchedData(req);
+      const { articleId } = req.params;
+
+      const existingArticle = await articleQueries.fetchArticle(
+        parseInt(articleId)
+      );
+
+      // Validate article exists and that the user has permission to edit it
+      if (!existingArticle) {
+        return res.status(404).json({ error: "Article not found" });
+      }
+      if (existingArticle.authorId !== req.user.id) {
+        return res
+          .status(403)
+          .json({ error: "Not authorized to edit this comment" });
+      }
+
+      const article = await articleQueries.updateArticle(
+        parseInt(articleId),
+        title,
+        body
+      );
+
+      res.status(200).json({
+        message: "Article updated successfully",
+        article,
+      });
+    } catch (err) {
+      if (err.code === "P2025") {
+        return res.status(404).json({ error: "Article not found" });
+      }
+
+      console.error(`Error updating article: ${err}`);
+      res.status(500).json({ error: "Internal Service Error" });
+    }
+  },
+];
+
+export async function deleteArticle(req, res) {
+  try {
+    const { articleId } = req.params;
+
+    const existingArticle = await articleQueries.fetchArticle(
+      parseInt(articleId)
+    );
+    if (!existingArticle) {
+      return res.status(404).json({ error: "Article not found" });
+    }
+    if (existingArticle.authorId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to edit this comment" });
+    }
+
+    const deletedArticle = articleQueries.removeArticle(parseInt(articleId));
+
+    return res.json({
+      message: "Successfully deleted article",
+      article: deletedArticle,
+    });
+  } catch (err) {
+    console.error(`Error deleting article: ${err}`);
+    res.status(500).json({ error: "Internal Service Error" });
+  }
+}
 
 export async function publishArticle(req, res) {}
 

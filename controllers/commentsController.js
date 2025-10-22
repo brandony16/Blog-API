@@ -32,7 +32,9 @@ export async function editComment(req, res) {
   const { content } = req.body;
 
   try {
-    const existingComment = await commentQueries.getCommentById(commentId);
+    const existingComment = await commentQueries.getCommentById(
+      parseInt(commentId)
+    );
 
     // Validate comment exists and that the user has permission to edit it
     if (!existingComment) {
@@ -61,7 +63,9 @@ export async function deleteComment(req, res) {
   try {
     const { commentId } = req.params;
 
-    const existingComment = await commentQueries.getCommentById(commentId);
+    const existingComment = await commentQueries.getCommentById(
+      parseInt(commentId)
+    );
 
     // Verify comment exists and confirm that user has permission to delete the comment
     if (!existingComment) {
@@ -76,9 +80,14 @@ export async function deleteComment(req, res) {
         .json({ error: "Not authorized to delete this comment" });
     }
 
-    const deletedComment = await commentQueries.removeComment(commentId);
+    const deletedComment = await commentQueries.removeComment(
+      parseInt(commentId)
+    );
 
-    return res.json(deletedComment);
+    return res.json({
+      message: "Successfully deleted comment",
+      comment: deletedComment,
+    });
   } catch (err) {
     console.error(`Error deleting comment: ${err}`);
     res.status(500).json({ error: "Internal Service Error" });
