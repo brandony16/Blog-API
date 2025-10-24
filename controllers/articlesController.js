@@ -1,6 +1,7 @@
-import { body } from "express-validator";
+import { body, matchedData, validationResult } from "express-validator";
 import { DEFAULT_LIMIT_ARTICLES } from "../constants.js";
 import * as articleQueries from "../queries/articleQueries.js";
+import * as commentQueries from "../queries/commentQueries.js";
 
 export async function getArticles(req, res) {
   try {
@@ -125,7 +126,7 @@ export const editArticle = [
       if (existingArticle.authorId !== req.user.id) {
         return res
           .status(403)
-          .json({ error: "Not authorized to edit this comment" });
+          .json({ error: "Not authorized to edit this article" });
       }
 
       const article = await articleQueries.updateArticle(
@@ -162,23 +163,115 @@ export async function deleteArticle(req, res) {
     if (existingArticle.authorId !== req.user.id) {
       return res
         .status(403)
-        .json({ error: "Not authorized to edit this comment" });
+        .json({ error: "Not authorized to delete this article" });
     }
 
-    const deletedArticle = articleQueries.removeArticle(parseInt(articleId));
+    const deletedArticle = await articleQueries.removeArticle(
+      parseInt(articleId)
+    );
 
     return res.json({
       message: "Successfully deleted article",
       article: deletedArticle,
     });
   } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Article not found" });
+    }
+
     console.error(`Error deleting article: ${err}`);
     res.status(500).json({ error: "Internal Service Error" });
   }
 }
 
-export async function publishArticle(req, res) {}
+export async function publishArticle(req, res) {
+  try {
+    const { articleId } = req.params;
 
-export async function getArticleComments(req, res) {}
+    const existingArticle = await articleQueries.fetchArticle(
+      parseInt(articleId)
+    );
+    if (!existingArticle) {
+      return res.status(404).json({ error: "Article not found" });
+    }
+    if (existingArticle.authorId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized to publish this article" });
+    }
 
-export async function postComment(req, res) {}
+    const publishedArticle = await articleQueries.publish(parseInt(articleId));
+
+    return res.json({
+      message: "Successfully published article",
+      article: publishedArticle,
+    });
+  } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ error: "Article not found" });
+    }
+
+    console.error(`Error publishing article: ${err}`);
+    res.status(500).json({ error: "Internal Service Error" });
+  }
+}
+
+export async function getArticleComments(req, res) {
+  try {
+    const { articleId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_ARTICLES;
+    const skip = (page - 1) * limit; // Number of entries to skip to get correct page
+
+    const [comments, total] = await Promise.all([
+      commentQueries.getCommentsByArticle(parseInt(articleId), skip, limit),
+      commentQueries.getCommentCountByArticle(articleId),
+    ]);
+
+    return res.json({
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      comments,
+    });
+  } catch (err) {
+    console.error(`Error fetching article comments: ${err}`);
+    res.status(500).json({ error: "Internal Service Error" });
+  }
+}
+
+const validateComment = [
+  body("text")
+    .trim()
+    .isLength({ min: 1, max: 255 })
+    .withMessage("Comment should be between 1 and 255 characters"),
+];
+export const postComment = [
+  validateComment,
+  async (req, res) => {
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) {
+      return res.status(400).json({ errors: errs.array() });
+    }
+
+    try {
+      const { articleId } = req.params;
+      const { text } = matchedData(req);
+
+      const comment = await commentQueries.addComment(
+        text,
+        req.user.id,
+        parseInt(articleId)
+      );
+
+      res.status(201).json({
+        message: "Comment posted",
+        comment,
+      });
+    } catch (err) {
+      console.error(`Error creating comment: ${err}`);
+      res.status(500).json({ error: "Internal Service Error" });
+    }
+  },
+];

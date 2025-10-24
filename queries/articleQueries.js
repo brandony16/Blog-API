@@ -77,6 +77,17 @@ export async function removeArticle(articleId) {
   });
 }
 
+export async function publish(articleId) {
+  return await prisma.article.update({
+    where: {
+      id: articleId,
+      deletedAt: null,
+    },
+    data: { publishedAt: new Date(), isPublished: true },
+    select: ARTICLE_FIELDS,
+  });
+}
+
 // ----- MULTIPLE ARTICLES -----
 export async function getManyArticles(skip, limit) {
   return await prisma.article.findMany({

@@ -27,6 +27,7 @@ articlesRouter.put(
 articlesRouter.delete(
   "/:articleId",
   verifyToken,
+  requireRole(Role.ADMIN),
   articlesController.deleteArticle
 );
 
@@ -43,6 +44,10 @@ articlesRouter.get(
   articlesController.getArticleComments
 );
 
-articlesRouter.post("/:articleId/comments", articlesController.postComment);
+articlesRouter.post(
+  "/:articleId/comments",
+  verifyToken,
+  articlesController.postComment
+);
 
 export default articlesRouter;

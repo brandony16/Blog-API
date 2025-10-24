@@ -5,13 +5,21 @@ import usersRouter from "./routes/usersRouter.js";
 import articlesRouter from "./routes/articlesRouter.js";
 import commentsRouter from "./routes/commentsRouter.js";
 import passport from "./auth/passport.js";
+import cors from "cors";
 
 dotenv.config();
 const app = express();
 
+app.use(
+  cors({
+    origin: ["http://localhost:8000", "http://localhost:5000"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
-app.use(express.urlencoded({ extended: false }));
 
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);

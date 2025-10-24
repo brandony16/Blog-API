@@ -27,37 +27,51 @@ export async function getComments(req, res) {
   }
 }
 
-export async function editComment(req, res) {
-  const { commentId } = req.params;
-  const { content } = req.body;
-
-  try {
-    const existingComment = await commentQueries.getCommentById(
-      parseInt(commentId)
-    );
-
-    // Validate comment exists and that the user has permission to edit it
-    if (!existingComment) {
-      return res.status(404).json({ error: "Comment not found" });
-    }
-    if (existingComment.commenterId !== req.user.id) {
-      return res
-        .status(403)
-        .json({ error: "Not authorized to edit this comment" });
+const validateComment = [
+  body("text")
+    .trim()
+    .isLength({ min: 1, max: 255 })
+    .withMessage("Comment should be between 1 and 255 characters"),
+];
+export const editComment = [
+  validateComment,
+  async (req, res) => {
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) {
+      return res.status(400).json({ errors: errs.array() });
     }
 
-    // Update comment
-    const updatedComment = await commentQueries.updateComment(
-      commentId,
-      content
-    );
+    try {
+      const { commentId } = req.params;
+      const { text } = matchedData(req);
 
-    return res.json(updatedComment);
-  } catch (err) {
-    console.error(`Error updating comment: ${err}`);
-    res.status(500).json({ error: "Internal Service Error" });
-  }
-}
+      const existingComment = await commentQueries.getCommentById(
+        parseInt(commentId)
+      );
+
+      // Validate comment exists and that the user has permission to edit it
+      if (!existingComment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+      if (existingComment.commenterId !== req.user.id) {
+        return res
+          .status(403)
+          .json({ error: "Not authorized to edit this comment" });
+      }
+
+      // Update comment
+      const updatedComment = await commentQueries.updateComment(
+        parseInt(commentId),
+        text
+      );
+
+      return res.json(updatedComment);
+    } catch (err) {
+      console.error(`Error updating comment: ${err}`);
+      res.status(500).json({ error: "Internal Service Error" });
+    }
+  },
+];
 
 export async function deleteComment(req, res) {
   try {
