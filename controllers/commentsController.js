@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import { DEFAULT_LIMIT_COMMENTS } from "../constants.js";
 import * as commentQueries from "../queries/commentQueries.js";
+import { body, matchedData, validationResult } from "express-validator";
 
 export async function getComments(req, res) {
   try {

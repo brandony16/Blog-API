@@ -11,7 +11,7 @@ articlesRouter.get("/", articlesController.getArticles);
 articlesRouter.post(
   "/",
   verifyToken,
-  verifyToken(Role.ADMIN),
+  requireRole(Role.ADMIN),
   articlesController.postArticle
 );
 
