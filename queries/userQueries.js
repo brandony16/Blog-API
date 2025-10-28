@@ -29,13 +29,14 @@ export async function findUserByEmail(email) {
   });
 }
 
-export async function addUser(firstName, lastName, email, password) {
+export async function addUser(firstName, lastName, email, password, role) {
   return await prisma.user.create({
     data: {
       firstName,
       lastName,
       email,
       password,
+      role,
     },
     select: SAFE_USER_INFO,
   });

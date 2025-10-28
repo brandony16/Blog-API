@@ -3,6 +3,7 @@ import * as userQueries from "../queries/userQueries.js";
 import bcrypt from "bcrypt";
 import passport from "../auth/passport.js";
 import jwt from "jsonwebtoken";
+import { Role } from "@prisma/client";
 
 const alphaErr = "must contain only letters.";
 const lengthErr = "must be between 1 and 30 characters.";
@@ -53,7 +54,57 @@ export const register = [
       const { firstName, lastName, email, password } = matchedData(req);
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      await userQueries.addUser(firstName, lastName, email, hashedPassword);
+      await userQueries.addUser(
+        firstName,
+        lastName,
+        email,
+        hashedPassword,
+        Role.CLIENT
+      );
+
+      const payload = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: "1d",
+      });
+
+      res.status(201).json({
+        message: "User registered successfully",
+        token: token,
+        user: { id: user.id, email: user.email, role: user.role },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+];
+
+const validateAdmin = [
+  ...validateUser,
+  body("secret-password").equals(process.env.ADMIN_SECRET),
+];
+export const registerAdmin = [
+  validateAdmin,
+  async (req, res, next) => {
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) {
+      return res.status(400).json({ errors: errs.array() });
+    }
+
+    try {
+      const { firstName, lastName, email, password } = matchedData(req);
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await userQueries.addUser(
+        firstName,
+        lastName,
+        email,
+        hashedPassword,
+        Role.ADMIN
+      );
 
       const payload = {
         id: user.id,
