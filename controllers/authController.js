@@ -149,3 +149,27 @@ export function login(req, res, next) {
     });
   })(req, res, next);
 }
+
+export function adminLogin(req, res, next) {
+  passport.authenticate("local", { session: false }, (err, user, info) => {
+    if (err) return next(err);
+    if (!user) return res.status(401).json({ message: info.message });
+    if (user.role !== Role.ADMIN)
+      return res.status(401).json({ message: "Must be an admin" });
+
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    res.status(201).json({
+      message: "Login Successful",
+      token: token,
+      user,
+    });
+  })(req, res, next);
+}

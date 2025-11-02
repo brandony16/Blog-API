@@ -10,4 +10,6 @@ authRouter.post("/register-admin", authController.registerAdmin);
 
 authRouter.post("/login", authController.login);
 
+authRouter.post("/login-admin", authController.login);
+
 export default authRouter;
