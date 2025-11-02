@@ -54,7 +54,7 @@ export const register = [
       const { firstName, lastName, email, password } = matchedData(req);
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      await userQueries.addUser(
+      const user = await userQueries.addUser(
         firstName,
         lastName,
         email,
@@ -74,7 +74,7 @@ export const register = [
       res.status(201).json({
         message: "User registered successfully",
         token: token,
-        user: { id: user.id, email: user.email, role: user.role },
+        user,
       });
     } catch (err) {
       next(err);
@@ -84,7 +84,9 @@ export const register = [
 
 const validateAdmin = [
   ...validateUser,
-  body("secret-password").equals(process.env.ADMIN_SECRET),
+  body("secretPassword")
+    .equals(process.env.ADMIN_SECRET)
+    .withMessage("Incorrect secret password"),
 ];
 export const registerAdmin = [
   validateAdmin,
@@ -98,7 +100,7 @@ export const registerAdmin = [
       const { firstName, lastName, email, password } = matchedData(req);
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      await userQueries.addUser(
+      const user = await userQueries.addUser(
         firstName,
         lastName,
         email,
@@ -118,7 +120,7 @@ export const registerAdmin = [
       res.status(201).json({
         message: "User registered successfully",
         token: token,
-        user: { id: user.id, email: user.email, role: user.role },
+        user,
       });
     } catch (err) {
       next(err);
@@ -143,7 +145,7 @@ export function login(req, res, next) {
     res.status(201).json({
       message: "Login Successful",
       token: token,
-      user: { id: user.id, email: user.email, role: user.role },
+      user,
     });
   })(req, res, next);
 }

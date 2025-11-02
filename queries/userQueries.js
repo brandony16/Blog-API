@@ -28,6 +28,11 @@ export async function findUserByEmail(email) {
     select: SAFE_USER_INFO,
   });
 }
+export async function findUserForAuth(email) {
+  return await prisma.user.findUnique({
+    where: { email },
+  });
+}
 
 export async function addUser(firstName, lastName, email, password, role) {
   return await prisma.user.create({
