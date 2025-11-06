@@ -5,6 +5,7 @@ const ARTICLE_FIELDS = {
   title: true,
   body: true,
   createdAt: true,
+  publishedAt: true,
   editedAt: true,
 };
 
@@ -15,7 +16,6 @@ export async function getArticleCount() {
       deletedAt: null,
       isPublished: true,
     },
-    select: ARTICLE_FIELDS,
   });
 }
 
@@ -24,9 +24,7 @@ export async function getArticleCountByUser(userId) {
     where: {
       authorId: parseInt(userId),
       deletedAt: null,
-      isPublished: true,
     },
-    select: ARTICLE_FIELDS,
   });
 }
 
@@ -107,7 +105,6 @@ export async function getArticlesByUser(userId, skip, limit) {
     where: {
       authorId: parseInt(userId),
       deletedAt: null,
-      isPublished: true,
     },
     skip: skip,
     take: limit,
