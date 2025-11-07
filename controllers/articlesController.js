@@ -5,6 +5,7 @@ import * as commentQueries from "../queries/commentQueries.js";
 
 export async function getArticles(req, res) {
   try {
+    console.log(req.query);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_ARTICLES;
     const skip = (page - 1) * limit; // Number of entries to skip to get correct page

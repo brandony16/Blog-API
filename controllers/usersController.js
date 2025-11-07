@@ -118,13 +118,39 @@ export async function getUserArticles(req, res) {
     const { userId } = req.params;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_ARTICLES;
+    const sort = req.query.sort || "lastUpdated";
+    const order = req.query.order || "desc";
     const skip = (page - 1) * limit;
 
+    const sortMap = {
+      title: "title",
+      status: "publishedAt",
+      lastUpdated: "publishedAt",
+    };
+
+    const orderObj = { [sortMap[sort]]: order };
+
     // Get all articles and the total number of articles for this user
-    const [articles, total] = await Promise.all([
-      articleQueries.getArticlesByUser(userId, skip, limit),
+    let [articles, total] = await Promise.all([
+      articleQueries.getArticlesByUser(userId, skip, limit, orderObj),
       articleQueries.getArticleCountByUser(userId),
     ]);
+
+    if (sort === "lastUpdated") {
+      articles = articles.sort((a, b) => {
+        const aTime = Math.max(
+          new Date(a.createdAt),
+          new Date(a.publishedAt),
+          new Date(a.editedAt)
+        );
+        const bTime = Math.max(
+          new Date(b.createdAt),
+          new Date(b.publishedAt),
+          new Date(b.editedAt)
+        );
+        return order === "asc" ? aTime - bTime : bTime - aTime;
+      });
+    }
 
     res.json({
       page,

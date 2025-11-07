@@ -100,7 +100,7 @@ export async function getManyArticles(skip, limit) {
   });
 }
 
-export async function getArticlesByUser(userId, skip, limit) {
+export async function getArticlesByUser(userId, skip, limit, orderBy) {
   return await prisma.article.findMany({
     where: {
       authorId: parseInt(userId),
@@ -108,7 +108,7 @@ export async function getArticlesByUser(userId, skip, limit) {
     },
     skip: skip,
     take: limit,
-    orderBy: { publishedAt: "desc" },
+    orderBy: orderBy,
     select: ARTICLE_FIELDS,
   });
 }
