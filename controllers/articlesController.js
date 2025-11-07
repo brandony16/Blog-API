@@ -159,12 +159,12 @@ export async function deleteArticle(req, res) {
       parseInt(articleId)
     );
     if (!existingArticle) {
-      return res.status(404).json({ error: "Article not found" });
+      return res.status(404).json({ message: "Article not found" });
     }
     if (existingArticle.authorId !== req.user.id) {
       return res
         .status(403)
-        .json({ error: "Not authorized to delete this article" });
+        .json({ message: "Not authorized to delete this article" });
     }
 
     const deletedArticle = await articleQueries.removeArticle(
@@ -177,11 +177,11 @@ export async function deleteArticle(req, res) {
     });
   } catch (err) {
     if (err.code === "P2025") {
-      return res.status(404).json({ error: "Article not found" });
+      return res.status(404).json({ message: "Article not found" });
     }
 
     console.error(`Error deleting article: ${err}`);
-    res.status(500).json({ error: "Internal Service Error" });
+    res.status(500).json({ message: "Internal Service Error" });
   }
 }
 

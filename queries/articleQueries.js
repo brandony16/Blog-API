@@ -7,6 +7,7 @@ const ARTICLE_FIELDS = {
   createdAt: true,
   publishedAt: true,
   editedAt: true,
+  authorId: true,
 };
 
 // ----- COUNTS -----
@@ -33,7 +34,6 @@ export async function fetchArticle(articleId) {
   return await prisma.article.findUnique({
     where: {
       deletedAt: null,
-      isPublished: true,
       id: articleId,
     },
     select: ARTICLE_FIELDS,
