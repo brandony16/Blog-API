@@ -28,7 +28,20 @@ export async function getUsers(req, res) {
     });
   } catch (err) {
     console.error(`Error fetching users: ${err}`);
-    res.status(500).json({ error: "Internal Service Error" });
+    res.status(500).json({ message: "Internal Service Error" });
+  }
+}
+
+export async function getUsersCount(req, res) {
+  try {
+    const total = await userQueries.getUserCount();
+
+    return res.json({
+      total,
+    });
+  } catch (err) {
+    console.error(`Error fetching users: ${err}`);
+    res.status(500).json({ message: "Internal Service Error" });
   }
 }
 
@@ -40,7 +53,7 @@ export async function getUser(req, res) {
     const user = await userQueries.getUserAndProfile(userId);
 
     if (!user) {
-      return res.status(404).json({ error: "No user found" });
+      return res.status(404).json({ message: "No user found" });
     }
 
     return res.json({
@@ -48,7 +61,7 @@ export async function getUser(req, res) {
     });
   } catch (err) {
     console.error(`Error fetching user: ${err}`);
-    res.status(500).json({ error: "Internal Service Error" });
+    res.status(500).json({ message: "Internal Service Error" });
   }
 }
 
@@ -61,12 +74,12 @@ export async function editUser(req, res) {
 
     // Verify this user exists and that the user has permission to edit this user
     if (!existingUser) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
     if (existingUser.id !== req.user.id) {
       return res
         .status(403)
-        .json({ error: "Not authorized to edit this user" });
+        .json({ message: "Not authorized to edit this user" });
     }
 
     const editableFields = ["firstName", "lastName"];
@@ -75,7 +88,7 @@ export async function editUser(req, res) {
     );
 
     if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ error: "No editable fields provided" });
+      return res.status(400).json({ message: "No editable fields provided" });
     }
 
     // Update user
@@ -84,7 +97,7 @@ export async function editUser(req, res) {
     return res.json({ user: updatedUser });
   } catch (err) {
     console.error(`Error editing user: ${err}`);
-    res.status(500).json({ error: "Internal Service Error" });
+    res.status(500).json({ message: "Internal Service Error" });
   }
 }
 
@@ -96,12 +109,12 @@ export async function deleteUser(req, res) {
 
     // Verify the given user exists and that the user has permission to delete the user
     if (!existingUser) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
     if (existingUser.id !== req.user.id && req.user.role !== Role.ADMIN) {
       return res
         .status(403)
-        .json({ error: "Not authorized to delete this user" });
+        .json({ message: "Not authorized to delete this user" });
     }
 
     const deletedUser = await userQueries.removeUser(userId);
@@ -109,7 +122,7 @@ export async function deleteUser(req, res) {
     return res.json(deletedUser);
   } catch (err) {
     console.error(`Error deleting user: ${err}`);
-    res.status(500).json({ error: "Internal Service Error" });
+    res.status(500).json({ message: "Internal Service Error" });
   }
 }
 
@@ -161,7 +174,7 @@ export async function getUserArticles(req, res) {
     });
   } catch (err) {
     console.error(`Error getting articles for user: ${err}`);
-    res.status(500).json({ error: "Internal Service Error" });
+    res.status(500).json({ message: "Internal Service Error" });
   }
 }
 
@@ -187,6 +200,28 @@ export async function getUserComments(req, res) {
     });
   } catch (err) {
     console.error(`Error getting comments for user: ${err}`);
-    res.status(500).json({ error: "Internal Service Error" });
+    res.status(500).json({ message: "Internal Service Error" });
+  }
+}
+
+export async function getUserArticleCounts(req, res) {
+  try {
+    const { userId } = req.params;
+    const id = parseInt(userId);
+
+    const [drafts, published, total] = await Promise.all([
+      articleQueries.getDraftCountByUser(id),
+      articleQueries.getPublishedCountByUser(id),
+      articleQueries.getArticleCountByUser(id),
+    ]);
+
+    res.json({
+      drafts,
+      published,
+      total,
+    });
+  } catch (err) {
+    console.error(`Error getting article counts for user: ${err}`);
+    res.status(500).json({ message: "Internal Service Error" });
   }
 }

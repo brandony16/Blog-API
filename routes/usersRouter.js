@@ -13,6 +13,13 @@ usersRouter.get(
   usersController.getUsers
 );
 
+usersRouter.get(
+  "/counts",
+  verifyToken,
+  requireRole(Role.ADMIN),
+  usersController.getUsersCount
+);
+
 usersRouter.get("/:userId", usersController.getUser);
 
 usersRouter.put("/:userId", verifyToken, usersController.editUser);
@@ -22,5 +29,12 @@ usersRouter.delete("/:userId", verifyToken, usersController.deleteUser);
 usersRouter.get("/:userId/comments", usersController.getUserComments);
 
 usersRouter.get("/:userId/articles", usersController.getUserArticles);
+
+usersRouter.get(
+  "/:userId/articles/counts",
+  verifyToken,
+  requireRole(Role.ADMIN),
+  usersController.getUserArticleCounts
+);
 
 export default usersRouter;

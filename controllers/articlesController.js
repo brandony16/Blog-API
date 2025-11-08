@@ -92,20 +92,8 @@ export async function getArticle(req, res) {
   }
 }
 
-const validateEdit = [
-  body("title")
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage("Title must be between 1 and 50 characters.")
-    .matches(/^[^<>]*$/)
-    .withMessage("Title cannot contain HTML tags."),
-  body("body")
-    .trim()
-    .isLength({ min: 10 })
-    .withMessage("Body must be at least 10 characters long"),
-];
 export const editArticle = [
-  validateEdit,
+  validateArticle,
   async (req, res) => {
     const errs = validationResult(req);
     if (!errs.isEmpty()) {
@@ -113,7 +101,7 @@ export const editArticle = [
     }
 
     try {
-      const { title, body } = matchedData(req);
+      const { title, body, publishArticle } = matchedData(req);
       const { articleId } = req.params;
 
       const existingArticle = await articleQueries.fetchArticle(
@@ -133,7 +121,8 @@ export const editArticle = [
       const article = await articleQueries.updateArticle(
         parseInt(articleId),
         title,
-        body
+        body,
+        publishArticle
       );
 
       res.status(200).json({
