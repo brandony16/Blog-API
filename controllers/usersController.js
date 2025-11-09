@@ -1,3 +1,4 @@
+import { Role } from "@prisma/client";
 import {
   DEFAULT_LIMIT_ARTICLES,
   DEFAULT_LIMIT_COMMENTS,
@@ -12,10 +13,21 @@ export async function getUsers(req, res) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_USERS;
     const skip = (page - 1) * limit; // Number of entries to skip to get correct page
+    const sort = req.query.sort || "lastUpdated";
+    const order = req.query.order || "desc";
+
+    const sortMap = {
+      name: "firstName",
+      email: "email",
+      role: "role",
+      created: "createdAt",
+    };
+
+    const orderObj = { [sortMap[sort]]: order };
 
     // Get users and total number of users
     const [users, total] = await Promise.all([
-      userQueries.getManyUsers(skip, limit),
+      userQueries.getManyUsers(skip, limit, orderObj),
       userQueries.getUserCount(),
     ]);
 
@@ -104,8 +116,8 @@ export async function editUser(req, res) {
 export async function deleteUser(req, res) {
   try {
     const { userId } = req.params;
-
-    const existingUser = userQueries.findUserById(userId);
+    const id = parseInt(userId);
+    const existingUser = userQueries.findUserById(id);
 
     // Verify the given user exists and that the user has permission to delete the user
     if (!existingUser) {
@@ -117,9 +129,12 @@ export async function deleteUser(req, res) {
         .json({ message: "Not authorized to delete this user" });
     }
 
-    const deletedUser = await userQueries.removeUser(userId);
+    const deletedUser = await userQueries.removeUser(id);
 
-    return res.json(deletedUser);
+    return res.json({
+      message: "User successfully deleted",
+      user: deletedUser,
+    });
   } catch (err) {
     console.error(`Error deleting user: ${err}`);
     res.status(500).json({ message: "Internal Service Error" });

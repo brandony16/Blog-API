@@ -99,12 +99,12 @@ export async function getUserAndProfile(userId) {
 }
 
 // ----- MULTIPLE USERS -----
-export async function getManyUsers(skip, limit) {
+export async function getManyUsers(skip, limit, orderObj) {
   return await prisma.user.findMany({
     skip: skip,
     take: limit,
-    select: SAFE_USER_INFO,
+    select: { ...SAFE_USER_INFO, email: true, createdAt: true },
     where: { deletedAt: null },
-    orderBy: { createdAt: "desc" },
+    orderBy: orderObj,
   });
 }
