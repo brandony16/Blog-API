@@ -24,6 +24,8 @@ usersRouter.get("/:userId", usersController.getUser);
 
 usersRouter.put("/:userId", verifyToken, usersController.editUser);
 
+usersRouter.put("/:userId/promote", verifyToken, requireRole(Role.ADMIN), usersController.editUser);
+
 usersRouter.delete("/:userId", verifyToken, usersController.deleteUser);
 
 usersRouter.get("/:userId/comments", usersController.getUserComments);

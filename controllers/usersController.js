@@ -7,6 +7,7 @@ import {
 import * as articleQueries from "../queries/articleQueries.js";
 import * as commentQueries from "../queries/commentQueries.js";
 import * as userQueries from "../queries/userQueries.js";
+import { body, matchedData, validationResult } from "express-validator";
 
 export async function getUsers(req, res) {
   try {
@@ -77,36 +78,73 @@ export async function getUser(req, res) {
   }
 }
 
-export async function editUser(req, res) {
-  const { userId } = req.params;
-  const data = req.body;
+const alphaErr = "must contain only letters.";
+const lengthErr = "must be between 1 and 30 characters.";
+const validateEdit = [
+  body("firstName")
+    .trim()
+    .isAlpha()
+    .withMessage(`First name ${alphaErr}`)
+    .isLength({ min: 1, max: 30 })
+    .withMessage(`First name ${lengthErr}`),
+  body("lastName")
+    .trim()
+    .isAlpha()
+    .withMessage(`Last name ${alphaErr}`)
+    .isLength({ min: 1, max: 30 })
+    .withMessage(`Last name ${lengthErr}`),
+];
+export const editUser = [
+  validateEdit,
+  async (req, res) => {
+    const { userId } = req.params;
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) {
+      return res.status(400).json({ errors: errs.array() });
+    }
 
+    try {
+      const { firstName, lastName } = matchedData(req);
+      const existingUser = await userQueries.findUserById(userId);
+
+      // Verify this user exists and that the user has permission to edit this user
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (existingUser.id !== req.user.id) {
+        return res
+          .status(403)
+          .json({ message: "Not authorized to edit this user" });
+      }
+
+      // Update user
+      const updatedUser = await userQueries.updateUser(userId, {
+        firstName,
+        lastName,
+      });
+
+      return res.json({ message: "User updated", user: updatedUser });
+    } catch (err) {
+      console.error(`Error editing user: ${err}`);
+      res.status(500).json({ message: "Internal Service Error" });
+    }
+  },
+];
+
+export async function promoteUser(req, res) {
+  const { userId } = req.params;
   try {
     const existingUser = await userQueries.findUserById(userId);
 
-    // Verify this user exists and that the user has permission to edit this user
+    // Verify this user exists and that the user has permission to promote this user
     if (!existingUser) {
       return res.status(404).json({ message: "User not found" });
     }
-    if (existingUser.id !== req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to edit this user" });
-    }
 
-    const editableFields = ["firstName", "lastName"];
-    const updateData = Object.fromEntries(
-      Object.entries(data).filter(([key]) => editableFields.includes(key))
-    );
-
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ message: "No editable fields provided" });
-    }
-
-    // Update user
+    const updateData = { role: Role.ADMIN };
     const updatedUser = await userQueries.updateUser(userId, updateData);
 
-    return res.json({ user: updatedUser });
+    return res.json({ message: "User promoted", user: updatedUser });
   } catch (err) {
     console.error(`Error editing user: ${err}`);
     res.status(500).json({ message: "Internal Service Error" });

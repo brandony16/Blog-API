@@ -18,19 +18,19 @@ export async function getUserCount() {
 
 export async function findUserById(id) {
   return await prisma.user.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: parseInt(id), deletedAt: null },
     select: SAFE_USER_INFO,
   });
 }
 export async function findUserByEmail(email) {
   return await prisma.user.findUnique({
-    where: { email: email },
+    where: { email: email, deletedAt: null },
     select: SAFE_USER_INFO,
   });
 }
 export async function findUserForAuth(email) {
   return await prisma.user.findUnique({
-    where: { email },
+    where: { email, deletedAt: null },
   });
 }
 
@@ -43,13 +43,13 @@ export async function addUser(firstName, lastName, email, password, role) {
       password,
       role,
     },
-    select: SAFE_USER_INFO,
+    select: { ...SAFE_USER_INFO, createdAt: true, email: true },
   });
 }
 
 export async function updateUser(userId, updateData) {
   return await prisma.user.update({
-    where: { id: parseInt(userId) },
+    where: { id: parseInt(userId), deletedAt: null },
     data: updateData,
     select: {
       ...SAFE_USER_INFO,
@@ -60,7 +60,7 @@ export async function updateUser(userId, updateData) {
 
 export async function removeUser(userId) {
   return await prisma.user.update({
-    where: { id: parseInt(userId) },
+    where: { id: parseInt(userId), deletedAt: null },
     data: { deletedAt: new Date() },
     select: {
       ...SAFE_USER_INFO,
