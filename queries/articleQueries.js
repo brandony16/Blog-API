@@ -50,10 +50,21 @@ export async function getPublishedCountByUser(userId) {
 }
 
 // ----- SINGLE ARTICLE -----
-export async function fetchArticle(articleId) {
+export async function fetchArticleAdmin(articleId) {
   return await prisma.article.findUnique({
     where: {
       deletedAt: null,
+      id: articleId,
+    },
+    select: ARTICLE_FIELDS,
+  });
+}
+
+export async function fetchArticleClient(articleId) {
+  return await prisma.article.findUnique({
+    where: {
+      deletedAt: null,
+      isPublished: true,
       id: articleId,
     },
     select: ARTICLE_FIELDS,

@@ -5,7 +5,6 @@ import * as commentQueries from "../queries/commentQueries.js";
 
 export async function getArticles(req, res) {
   try {
-    console.log(req.query);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_ARTICLES;
     const skip = (page - 1) * limit; // Number of entries to skip to get correct page
@@ -73,11 +72,32 @@ export const postArticle = [
   },
 ];
 
-export async function getArticle(req, res) {
+export async function getArticleAdmin(req, res) {
   const { articleId } = req.params;
 
   try {
-    const article = await articleQueries.fetchArticle(parseInt(articleId));
+    const article = await articleQueries.fetchArticleAdmin(parseInt(articleId));
+
+    if (!article) {
+      return res.status(404).json({ error: "Article not found" });
+    }
+
+    return res.json({
+      article,
+    });
+  } catch (err) {
+    console.error(`Error fetching articles: ${err}`);
+    res.status(500).json({ error: "Internal Service Error" });
+  }
+}
+
+export async function getArticleClient(req, res) {
+  const { articleId } = req.params;
+
+  try {
+    const article = await articleQueries.fetchArticleClient(
+      parseInt(articleId)
+    );
 
     if (!article) {
       return res.status(404).json({ error: "Article not found" });
@@ -104,7 +124,7 @@ export const editArticle = [
       const { title, body, publishArticle } = matchedData(req);
       const { articleId } = req.params;
 
-      const existingArticle = await articleQueries.fetchArticle(
+      const existingArticle = await articleQueries.fetchArticleAdmin(
         parseInt(articleId)
       );
 
@@ -144,7 +164,7 @@ export async function deleteArticle(req, res) {
   try {
     const { articleId } = req.params;
 
-    const existingArticle = await articleQueries.fetchArticle(
+    const existingArticle = await articleQueries.fetchArticleAdmin(
       parseInt(articleId)
     );
     if (!existingArticle) {
@@ -178,7 +198,7 @@ export async function publishArticle(req, res) {
   try {
     const { articleId } = req.params;
 
-    const existingArticle = await articleQueries.fetchArticle(
+    const existingArticle = await articleQueries.fetchArticleAdmin(
       parseInt(articleId)
     );
     if (!existingArticle) {

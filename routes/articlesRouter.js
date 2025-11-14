@@ -15,7 +15,13 @@ articlesRouter.post(
   articlesController.postArticle
 );
 
-articlesRouter.get("/:articleId", articlesController.getArticle);
+articlesRouter.get("/:articleId", articlesController.getArticleClient);
+articlesRouter.get(
+  "/admin/:articleId",
+  verifyToken,
+  requireRole(Role.ADMIN),
+  articlesController.getArticleAdmin
+);
 
 articlesRouter.put(
   "/:articleId",
