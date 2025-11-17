@@ -10,6 +10,17 @@ const ARTICLE_FIELDS = {
   authorId: true,
 };
 
+const EXTENDED_INFO = {
+  ...ARTICLE_FIELDS,
+  author: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+    },
+  },
+};
+
 // ----- COUNTS -----
 export async function getArticleCount() {
   return await prisma.article.count({
@@ -56,7 +67,7 @@ export async function fetchArticleAdmin(articleId) {
       deletedAt: null,
       id: articleId,
     },
-    select: ARTICLE_FIELDS,
+    select: EXTENDED_INFO,
   });
 }
 
@@ -67,7 +78,7 @@ export async function fetchArticleClient(articleId) {
       isPublished: true,
       id: articleId,
     },
-    select: ARTICLE_FIELDS,
+    select: EXTENDED_INFO,
   });
 }
 
@@ -133,7 +144,7 @@ export async function getManyArticles(skip, limit) {
     skip: skip,
     take: limit,
     orderBy: { publishedAt: "desc" },
-    select: ARTICLE_FIELDS,
+    select: EXTENDED_INFO,
   });
 }
 
