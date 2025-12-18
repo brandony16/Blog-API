@@ -4,7 +4,6 @@ const COMMENT_FIELDS = {
   id: true,
   text: true,
   createdAt: true,
-  editedAt: true,
 };
 
 // ----- COMMENT COUNTS -----
@@ -89,14 +88,19 @@ export async function getManyComments(skip, limit) {
   });
 }
 
-export async function getCommentsByArticle(articleId, skip, limit) {
+export async function getCommentsByArticle(articleId) {
   return await prisma.comment.findMany({
     where: { articleId: articleId, deletedAt: null },
-    skip: skip,
-    take: limit,
-    include: {
-      commenter: { select: { firstName, lastName } },
+    orderBy: { createdAt: "desc" },
+    select: {
+      ...COMMENT_FIELDS,
+      commenter: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
     },
-    select: COMMENT_FIELDS,
   });
 }

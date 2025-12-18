@@ -22,11 +22,17 @@ const EXTENDED_INFO = {
 };
 
 // ----- COUNTS -----
-export async function getArticleCount() {
+export async function getArticleCount(search) {
   return await prisma.article.count({
     where: {
       deletedAt: null,
       isPublished: true,
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { body: { contains: search, mode: "insensitive" } },
+        ],
+      }),
     },
   });
 }
@@ -135,11 +141,17 @@ export async function publish(articleId) {
 }
 
 // ----- MULTIPLE ARTICLES -----
-export async function getManyArticles(skip, limit) {
+export async function getManyArticles(skip, limit, search) {
   return await prisma.article.findMany({
     where: {
       deletedAt: null,
       isPublished: true,
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { body: { contains: search, mode: "insensitive" } },
+        ],
+      }),
     },
     skip: skip,
     take: limit,

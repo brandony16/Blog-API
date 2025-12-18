@@ -22,9 +22,9 @@ export async function findUserById(id) {
     select: SAFE_USER_INFO,
   });
 }
-export async function findUserByEmail(email) {
+export async function findUserByEmail(email) { // Used for uniqueness check
   return await prisma.user.findUnique({
-    where: { email: email, deletedAt: null },
+    where: { email: email },
     select: SAFE_USER_INFO,
   });
 }

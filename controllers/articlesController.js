@@ -7,12 +7,13 @@ export async function getArticles(req, res) {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_ARTICLES;
+    const query = req.query.q?.trim() || null;
     const skip = (page - 1) * limit; // Number of entries to skip to get correct page
 
     // Get articles and total number of articles
     const [articles, total] = await Promise.all([
-      articleQueries.getManyArticles(skip, limit),
-      articleQueries.getArticleCount(),
+      articleQueries.getManyArticles(skip, limit, query),
+      articleQueries.getArticleCount(query),
     ]);
 
     return res.json({
@@ -229,20 +230,11 @@ export async function publishArticle(req, res) {
 export async function getArticleComments(req, res) {
   try {
     const { articleId } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || DEFAULT_LIMIT_ARTICLES;
-    const skip = (page - 1) * limit; // Number of entries to skip to get correct page
+    const id = parseInt(articleId);
 
-    const [comments, total] = await Promise.all([
-      commentQueries.getCommentsByArticle(parseInt(articleId), skip, limit),
-      commentQueries.getCommentCountByArticle(articleId),
-    ]);
+    const comments = await commentQueries.getCommentsByArticle(id);
 
     return res.json({
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
       comments,
     });
   } catch (err) {
